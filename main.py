@@ -45,7 +45,7 @@ def go(config: DictConfig):
                     "sample": config["etl"]["sample"],
                     "artifact_name": "sample.csv",
                     "artifact_type": "raw_data",
-                    "artifact_description": "Raw file as downloaded"
+                    "artifact_description": "Raw-file-as-downloaded"
                 },
             )
 
