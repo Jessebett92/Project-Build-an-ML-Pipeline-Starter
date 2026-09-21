@@ -51,17 +51,23 @@ def go(args):
     # Fix the random seed for the Random Forest, so we get reproducible results
     rf_config['random_state'] = args.random_seed
 
-    # Use run.use_artifact(...).file() to get the train and validation artifact
-    # and save the returned path in train_local_path
-    trainval_local_path = run.use_artifact(args.trainval_artifact).file()
+    # save the returned path in trainval_local_path
+
+    artifact = run.use_artifact(args.trainval_artifact)
+    artifact_path = artifact.download()
+    filename = args.trainval_artifact.split(":")[0]
+
+    trainval_local_path = os.path.join(artifact_path, filename)
    
     X = pd.read_csv(trainval_local_path)
     y = X.pop("price")  # this removes the column "price" from X and puts it into y
 
     logger.info(f"Minimum price: {y.min()}, Maximum price: {y.max()}")
 
+    stratify_col = X[args.stratify_by] if args.stratify_by != "none" else None
+
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=args.val_size, stratify=X[args.stratify_by], random_state=args.random_seed
+        X, y, test_size=args.val_size, stratify=stratify_col, random_state=args.random_seed
     )
 
     logger.info("Preparing sklearn pipeline")
@@ -73,7 +79,7 @@ def go(args):
 
     ######################################
     # Fit the pipeline sk_pipe by calling the .fit method on X_train and y_train
-    # YOUR CODE HERE
+    sk_pipe.fit(X_train, y_train)
     ######################################
 
     # Compute r2 and MAE
@@ -97,6 +103,8 @@ def go(args):
     # HINT: use mlflow.sklearn.save_model
     mlflow.sklearn.save_model(
         # YOUR CODE HERE
+        sk_pipe,
+        "random_forest_dir",
         input_example = X_train.iloc[:5]
     )
     ######################################
@@ -119,7 +127,7 @@ def go(args):
     # Here we save variable r_squared under the "r2" key
     run.summary['r2'] = r_squared
     # Now save the variable mae under the key "mae".
-    # YOUR CODE HERE
+    run.summary['mae'] = mae
     ######################################
 
     # Upload to W&B the feture importance visualization
@@ -162,7 +170,8 @@ def get_inference_pipeline(rf_config, max_tfidf_features):
     # 1 - A SimpleImputer(strategy="most_frequent") to impute missing values
     # 2 - A OneHotEncoder() step to encode the variable
     non_ordinal_categorical_preproc = make_pipeline(
-        # YOUR CODE HERE
+        SimpleImputer(strategy="most_frequent"),
+        OneHotEncoder(handle_unknown="ignore"),
     )
     ######################################
 
@@ -225,7 +234,8 @@ def get_inference_pipeline(rf_config, max_tfidf_features):
 
     sk_pipe = Pipeline(
         steps =[
-        # YOUR CODE HERE
+            ("preprocessor", preprocessor),
+            ("random_forest", random_forest),
         ]
     )
 
