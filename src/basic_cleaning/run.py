@@ -2,6 +2,7 @@
 """
 Download from W&B the raw dataset and apply some basic data cleaning, exporting the result to a new artifact
 """
+import os
 import argparse
 import logging
 import wandb
@@ -14,14 +15,24 @@ logger = logging.getLogger()
 # DO NOT MODIFY
 def go(args):
 
-    run = wandb.init(job_type="basic_cleaning")
+    run = wandb.init(
+        project="nyc_airbnb",
+        group="cleaning",
+        job_type="basic_cleaning",
+        save_code=True
+        )
     run.config.update(args)
 
     # Download input artifact. This will also log that this script is using this
-    
-    run = wandb.init(project="nyc_airbnb", group="cleaning", save_code=True)
-    artifact_local_path = run.use_artifact(args.input_artifact).file()
-    df = pd.read_csv(artifact_local_path)
+
+    artifact = run.use_artifact(args.input_artifact)    
+    artifact_local_path = artifact.download()
+
+    csv_filename=args.input_artifact.split(":")[0]
+    csv_path = os.path.join(artifact_local_path, csv_filename)
+
+    logger.info(f"Reading from {csv_path}")
+    df = pd.read_csv(csv_path)
     # Drop outliers
     min_price = args.min_price
     max_price = args.max_price

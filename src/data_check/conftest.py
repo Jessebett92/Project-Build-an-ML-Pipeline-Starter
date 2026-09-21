@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
 import wandb
+import os
 
 
 def pytest_addoption(parser):
@@ -12,34 +13,38 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope='session')
-def data(request):
+def wandb_run():
     run = wandb.init(job_type="data_tests", resume=True)
+    yield run
+    run.finish()
 
-    # Download input artifact. This will also note that this script is using this
-    # particular version of the artifact
-    data_path = run.use_artifact(request.config.option.csv).file()
-
-    if data_path is None:
+@pytest.fixture(scope='session')
+def data(request, wandb_run):
+    artifact_ref = request.config.option.csv
+    if artifact_ref is None:   
         pytest.fail("You must provide the --csv option on the command line")
 
-    df = pd.read_csv(data_path)
+    artifact = wandb_run.use_artifact(artifact_ref)    
+    artifact_path = artifact.download()
+    filename = artifact_ref.split(":")[0]
+    data_path = os.path.join(artifact_path, filename)
 
+    df = pd.read_csv(data_path)
     return df
 
 
 @pytest.fixture(scope='session')
-def ref_data(request):
-    run = wandb.init(job_type="data_tests", resume=True)
-
-    # Download input artifact. This will also note that this script is using this
-    # particular version of the artifact
-    data_path = run.use_artifact(request.config.option.ref).file()
-
-    if data_path is None:
+def ref_data(request, wandb_run):
+    artifact_ref = request.config.option.ref
+    if artifact_ref is None:
         pytest.fail("You must provide the --ref option on the command line")
 
-    df = pd.read_csv(data_path)
+    artifact = wandb_run.use_artifact(artifact_ref)        
+    artifact_path = artifact.download()
+    filename = artifact_ref.split(":")[0]
+    data_path = os.path.join(artifact_path, filename)
 
+    df = pd.read_csv(data_path)
     return df
 
 
