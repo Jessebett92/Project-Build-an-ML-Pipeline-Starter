@@ -120,7 +120,7 @@ def go(config: DictConfig):
                     "stratify_by": config["modeling"]["stratify_by"],
                     "rf_config": rf_config_path,
                     "max_tfidf_features": str(config["modeling"]["max_tfidf_features"]),
-                    "output_artifact": "random_forest_model",
+                    "output_artifact": "model_export",
                 },
             )
             ##################
@@ -131,7 +131,7 @@ def go(config: DictConfig):
             _=mlflow.run(
                 uri="components/test_regression_model",
                 parameters={
-                    "mlflow_model": "random_forest_model:latest",
+                    "mlflow_model": "model_export:prod",
                     "test_dataset": "test_data.csv:latest"
                 },
                 experiment_name="nyc_airbnb",
