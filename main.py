@@ -50,6 +50,15 @@ def go(config: DictConfig):
             )
 
         if "basic_cleaning" in active_steps:
+            """
+            Runs the basic cleaning step of the ML pipeline.
+
+            Checks if 'basic cleaning is included in the active_steps
+            and creates an MLflow run for this component in the source
+            repository specified. The parameters for the run are passed dynamically 
+            and are expressed in the src/basic_cleaning/MLproject file.
+            """
+
             _ = mlflow.run(
                 f"{config['src_folder']['src_repository']}/basic_cleaning",
                 "main",

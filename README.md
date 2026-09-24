@@ -179,3 +179,7 @@ Please, make sure all steps are using **the same** python version and that you h
 ## License
 
 [License](LICENSE.txt)
+
+github repo: https://github.com/Jessebett92/Project-Build-an-ML-Pipeline-Starter
+
+W&B Project: https://wandb.ai/jessebett92-western-governors-university/nyc_airbnb/overview
