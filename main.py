@@ -43,7 +43,7 @@ def go(config: DictConfig):
                 env_manager="conda",
                 parameters={
                     "sample": config["etl"]["sample"],
-                    "artifact_name": "sample1.csv",
+                    "artifact_name": config["etl"]["sample"],
                     "artifact_type": "raw_data",
                     "artifact_description": "Raw-file-as-downloaded"
                 },
@@ -55,7 +55,7 @@ def go(config: DictConfig):
                 "main",
                 env_manager="conda",
                 parameters={
-                    "input_artifact": "sample1.csv:latest",
+                    "input_artifact": f"{config['etl']['sample']}:latest",
                     "output_artifact": "clean_sample.csv",
                     "output_type": "cleaned_data",
                     "output_description": "cleaned_data_artifact",
@@ -122,7 +122,7 @@ def go(config: DictConfig):
             _=mlflow.run(
                 uri="components/test_regression_model",
                 parameters={
-                    "mlflow_model": "random_forest_model:prod",
+                    "mlflow_model": "random_forest_model:latest",
                     "test_dataset": "test_data.csv:latest"
                 },
                 experiment_name="nyc_airbnb",
