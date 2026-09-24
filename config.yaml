@@ -11,7 +11,7 @@ src_folder:
   experiment_name: development
   steps: all
 etl:
-  sample: "sample1.csv"
+  sample: "sample2.csv"
   min_price: 10  # dollars
   max_price: 350  # dollars
 data_check:
@@ -32,10 +32,6 @@ modeling:
   # RandomForestRegressor. This is a subsample, but more could be added:
   random_forest:
     n_estimators: 100
-    val_size: 0.2
-    random_seed: 42
-    stratify_by: neighbourhood_group
-    max_tfidf_features: 51
     max_depth: 15
     min_samples_split: 4
     min_samples_leaf: 3
