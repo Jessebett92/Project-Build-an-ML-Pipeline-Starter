@@ -1,35 +1,49 @@
 #!/usr/bin/env python
 """
-This step takes the best model, tagged with the "prod" tag, and tests it against the test dataset
+This step takes the best model, tagged with the "prod" alias,
+and tests it against the test dataset.
 """
 import argparse
 import logging
-import wandb
+from pathlib import Path
+
 import mlflow
 import pandas as pd
+import wandb
 from sklearn.metrics import mean_absolute_error
-
-from wandb_utils.log_artifact import log_artifact
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
 logger = logging.getLogger()
 
 
-def go(args):
+def artifact_root(reference: str) -> str:
+    """Convert a W&B artifact reference into a Windows-safe local path."""
+    safe_name = (
+        reference
+        .replace("/", "__")
+        .replace("\\", "__")
+        .replace(":", "__")
+    )
+    return str(Path("artifacts") / safe_name)
 
+
+def go(args):
     run = wandb.init(job_type="test_model")
     run.config.update(args)
 
-    logger.info("Downloading artifacts")
-    # Download input artifact. This will also log that this script is using this
-    # particular version of the artifact
-    model_local_path = run.use_artifact(args.mlflow_model).download()
+    logger.info("Downloading model artifact")
+    model_artifact = run.use_artifact(args.mlflow_model)
+    model_local_path = model_artifact.download(
+        root=artifact_root(args.mlflow_model)
+    )
 
-    # Download test dataset
-    test_dataset_path = run.use_artifact(args.test_dataset).file()
+    logger.info("Downloading test dataset artifact")
+    test_artifact = run.use_artifact(args.test_dataset)
+    test_dataset_path = test_artifact.file(
+        root=artifact_root(args.test_dataset)
+    )
 
-    # Read test dataset
     X_test = pd.read_csv(test_dataset_path)
     y_test = X_test.pop("price")
 
@@ -39,35 +53,35 @@ def go(args):
 
     logger.info("Scoring")
     r_squared = sk_pipe.score(X_test, y_test)
-
     mae = mean_absolute_error(y_test, y_pred)
 
-    logger.info(f"Score: {r_squared}")
-    logger.info(f"MAE: {mae}")
+    logger.info("Score: %s", r_squared)
+    logger.info("MAE: %s", mae)
 
-    # Log MAE and r2
-    run.summary['r2'] = r_squared
-    run.summary['mae'] = mae
+    run.summary["r2"] = r_squared
+    run.summary["mae"] = mae
+
+    run.finish()
 
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Test the provided model against the test dataset")
+    parser = argparse.ArgumentParser(
+        description="Test the provided model against the test dataset"
+    )
 
     parser.add_argument(
         "--mlflow_model",
-        type=str, 
-        help="Input MLFlow model",
-        required=True
+        type=str,
+        help="Input MLflow model",
+        required=True,
     )
 
     parser.add_argument(
         "--test_dataset",
-        type=str, 
+        type=str,
         help="Test dataset",
-        required=True
+        required=True,
     )
 
     args = parser.parse_args()
-
     go(args)
